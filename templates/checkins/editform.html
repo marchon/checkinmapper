@@ -1,0 +1,27 @@
+{% if checkin.id is not none %}
+  {% set action = url_for('checkins_edit', id=checkin.id) + '?__METHOD_OVERRIDE__=PUT' %}
+  {% set legend = 'Checkin %d' % checkin.id %}
+{% else %}
+  {% set action = url_for('checkins_new') %}
+  {% set legend = 'New Checkin' %}
+{% endif %}
+<form action="{{ action }}" method="POST">
+  <fieldset>
+    <legend>{{ legend }}</legend>
+    <ul>
+      <li><label for="lat">lat</label>
+        <input type="text" name="lat" value="{{ checkin.lat }}" required />
+      </li>
+      <li><label for="lon">lon</label>
+        <input type="text" name="lon" value="{{ checkin.lon }}" required />
+      </li>
+      <li><label for="val">val</label>
+        <input type="text" name="val" value="{{ checkin.val }}" required />
+      </li>
+    </ul>
+    <input type="submit" value="update" />
+    {% if checkin.id is not none %}
+    or <a href="{{ url_for('checkins_delete', id=checkin.id) }}?__METHOD_OVERRIDE__=DELETE">delete</a>
+    {% endif %}
+  </fieldset>
+</form>

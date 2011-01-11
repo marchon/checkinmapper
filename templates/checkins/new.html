@@ -1,0 +1,6 @@
+{% extends 'base.html' %}
+{% block title %}{{ super() }} - New Checkin{% endblock %}
+{% block content %}
+{% set checkin = {} %}
+{% include 'checkins/editform.html' %}
+{% endblock content %}

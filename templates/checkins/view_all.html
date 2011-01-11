@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block title %}{{ super() }} - View All{% endblock %}
+{% block content %}
+<div id="map_canvas"></div>
+
+<!--
+<table>
+  <tr>
+    <th>id</th>
+    <th>lat</th>
+    <th>lon</th>
+    <th>val</th>
+  </tr>
+  {% for checkin in checkins %}
+  <tr>
+    <td>{{ checkin.id }}</td>
+    <td>{{ checkin.lat }}</td>
+    <td>{{ checkin.lon }}</td>
+    <td>{{ checkin.val }}</td>
+  </tr>
+  {% endfor %}
+</table>
+-->
+{% endblock content %}
+
+{% block extrabody %}
+  <script src="http://maps.google.com/maps/api/js?sensor=false"></script>
+  <script type="text/javascript">
+    $(document).ready(function() {
+      var positions = [
+        {% for checkin in checkins %}
+        new google.maps.LatLng({{ checkin.lat }}, {{ checkin.lon }}),
+        {% endfor %}
+      ];
+      var opts = {
+        zoom: 5,
+        center: positions[0],
+        mapTypeId: google.maps.MapTypeId.ROADMAP
+      };
+      var map = new google.maps.Map(document.getElementById('map_canvas'), opts);
+      for (var i=0; i<positions.length; ++i) {
+        new google.maps.Marker({position: positions[i], map: map});
+      }
+    });
+  </script>
+{% endblock extrabody %}
