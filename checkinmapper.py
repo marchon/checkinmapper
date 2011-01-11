@@ -113,23 +113,6 @@ def add_random_checkins(checkinstore, n=10, latbounds=(35, 40),
 checkinstore = TmpCheckinStore()
 add_random_checkins(checkinstore)
 
-def errortransform(errormap):
-    def inner(func):
-        @wraps(func)
-        def wrapper(*args, **kw):
-            try:
-                return func(*args, **kw)
-            except Exception, e:
-                eclass = e.__class__
-                if eclass in errormap:
-                    raiseinstead = errormap[e.__class__]
-                    if raiseinstead is None:
-                        return
-                    raise raiseinstead
-                raise
-        return wrapper
-    return inner
-
 app = Flask(__name__)
 app.config['SECRET_KEY'] = settings.secret_key
 app.wsgi_app = MethodRewriteMiddleware(app.wsgi_app)
@@ -144,57 +127,71 @@ def checkins_new_form():
     return render_template('checkins/new.html', settings=settings)
 
 class InvalidInput(Exception): pass
+
 def _checkin_data_from_req():
     try:
         return [float(request.form[i]) for i in ('lat', 'lon', 'val')]
     except:
         raise InvalidInput
 
+_400_invalid_input = BadRequest('Invalid input')
 @app.route('/checkins/new', methods=['POST'])
-@errortransform({InvalidInput: BadRequest})
 def checkins_new():
     '''
     POST /checkins/new
 
     Creates new checkin from request data.
     '''
-    lat, lon, val = _checkin_data_from_req()
+    try:
+        lat, lon, val = _checkin_data_from_req()
+    except InvalidInput:
+        raise _400_invalid_input
     checkin = Checkin(lat, lon, val)
     checkinstore.add(checkin)
     flash('checkin saved')
     return redirect(url_for('checkins_edit_form', id=checkin.id))
 
+_404_invalid_id = NotFound('Invalid id')
 @app.route('/checkins/<id>')
-@errortransform({InvalidId: NotFound})
 def checkins_edit_form(id):
     '''
     GET /checkins/<id>
     '''
-    checkin = checkinstore.get(id)
+    try:
+        checkin = checkinstore.get(id)
+    except InvalidId:
+        raise _404_invalid_id
     return render_template('checkins/edit.html', checkin=checkin,
         settings=settings)
 
 @app.route('/checkins/<id>', methods=['PUT'])
-@errortransform({InvalidId: NotFound, InvalidInput: BadRequest})
 def checkins_edit(id):
     '''
     PUT /checkins/<id>
 
     Updates specified checkin from request data.
     '''
-    checkin = checkinstore.get(id)
-    lat, lon, val = _checkin_data_from_req()
+    try:
+        checkin = checkinstore.get(id)
+    except InvalidId:
+        raise _404_invalid_id
+    try:
+        lat, lon, val = _checkin_data_from_req()
+    except InvalidInput:
+        raise _400_invalid_input
     checkin.update(lat, lon, val)
     flash('checkin updated')
     return redirect(url_for('checkins_edit_form', id=checkin.id))
 
 @app.route('/checkins/<id>', methods=['DELETE'])
-@errortransform({InvalidId: NotFound})
 def checkins_delete(id):
     '''
     DELETE /checkins/<id>
     '''
-    checkinstore.remove(id)
+    try:
+        checkinstore.remove(id)
+    except InvalidId:
+        raise _404_invalid_id
     flash('checkin deleted')
     return redirect(url_for('checkins_view_all'))
 
