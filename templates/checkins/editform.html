@@ -1,4 +1,4 @@
-{% if checkin.id is not none %}
+{% if checkin.id is defined %}
   {% set action = url_for('checkins_edit', id=checkin.id) + '?__METHOD_OVERRIDE__=PUT' %}
   {% set legend = 'Checkin %d' % checkin.id %}
 {% else %}
@@ -20,7 +20,7 @@
       </li>
     </ul>
     <input type="submit" value="update" />
-    {% if checkin.id is not none %}
+    {% if checkin.id is defined %}
     or <a href="{{ url_for('checkins_delete', id=checkin.id) }}?__METHOD_OVERRIDE__=DELETE">delete</a>
     {% endif %}
   </fieldset>

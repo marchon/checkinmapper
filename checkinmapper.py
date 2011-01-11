@@ -2,6 +2,7 @@
 
 from flask import Flask, render_template, request, redirect, url_for, flash
 from functools import wraps
+from itertools import count
 from random import random
 from werkzeug import url_decode
 from werkzeug.exceptions import BadRequest, NotFound
@@ -56,6 +57,7 @@ class CheckinStore(object):
 class InMemoryCheckinStore(CheckinStore):
     def __init__(self):
         self.checkins = {}
+        self.counter = count()
 
     def get(self, id):
         try:
@@ -64,7 +66,7 @@ class InMemoryCheckinStore(CheckinStore):
             raise InvalidId(id)
 
     def add(self, checkin):
-        id = len(self.checkins)
+        id = self.counter.next()
         checkin.id = id
         self.checkins[id] = checkin
 
