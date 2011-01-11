@@ -4,7 +4,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash
 from functools import wraps
 from random import random
 from werkzeug import url_decode
-from werkzeug.exceptions import NotFound
+from werkzeug.exceptions import BadRequest, NotFound
 import settings
 
 class MethodRewriteMiddleware(object):
@@ -40,7 +40,7 @@ class Checkin(object):
         return '<%s lat=%r lon=%r val=%r>' % (self.__class__.__name__,
             self.lat, self.lon, self.val)
 
-class InvalidIdException(Exception): pass
+class InvalidId(Exception): pass
 class CheckinStore(object):
     def get(self, id):
         raise NotImplementedError
@@ -61,7 +61,7 @@ class InMemoryCheckinStore(CheckinStore):
         try:
             return self.checkins[int(id)]
         except:
-            raise InvalidIdException(id)
+            raise InvalidId(id)
 
     def add(self, checkin):
         id = len(self.checkins)
@@ -72,7 +72,7 @@ class InMemoryCheckinStore(CheckinStore):
         try:
             del self.checkins[int(id)]
         except:
-            raise InvalidIdException(id)
+            raise InvalidId(id)
 
     def update(self, checkin):
         pass # no need to do anything since checkin stored in memory
@@ -103,19 +103,22 @@ def add_random_checkins(checkinstore, n=10, latbounds=(35, 40),
 checkinstore = InMemoryCheckinStore()
 add_random_checkins(checkinstore)
 
-def erroreater(errorclass=Exception, raiseinstead=None):
-    def eaterfunc(func):
+def errortransform(errormap):
+    def inner(func):
         @wraps(func)
         def wrapper(*args, **kw):
             try:
                 return func(*args, **kw)
-            except errorclass, e:
-                if raiseinstead is not None:
+            except Exception, e:
+                eclass = e.__class__
+                if eclass in errormap:
+                    raiseinstead = errormap[e.__class__]
+                    if raiseinstead is None:
+                        return
                     raise raiseinstead
+                raise
         return wrapper
-    return eaterfunc
-
-_404ifbadid = erroreater(raiseinstead=NotFound(description='Invalid id'))
+    return inner
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = settings.secret_key
@@ -130,46 +133,53 @@ def checkins_new_form():
     '''
     return render_template('checkins/new.html', settings=settings)
 
+class InvalidInput(Exception): pass
+def _checkin_data_from_req():
+    try:
+        return [float(request.form[i]) for i in ('lat', 'lon', 'val')]
+    except:
+        raise InvalidInput
+
 @app.route('/checkins/new', methods=['POST'])
+@errortransform({InvalidId: NotFound, InvalidInput: BadRequest})
 def checkins_new():
     '''
     POST /checkins/new
 
     Creates new checkin from request data.
     '''
-    lat = request.form['lat']
-    lon = request.form['lon']
-    val = request.form['val']
+    lat, lon, val = _checkin_data_from_req()
     checkin = Checkin(lat, lon, val)
     checkinstore.add(checkin)
     flash('checkin saved')
     return redirect(url_for('checkins_edit_form', id=checkin.id))
 
-@_404ifbadid
 @app.route('/checkins/<id>')
+@errortransform({InvalidId: NotFound})
 def checkins_edit_form(id):
     '''
     GET /checkins/<id>
     '''
-    checkin = checkinstore.get(int(id))
+    checkin = checkinstore.get(id)
     return render_template('checkins/edit.html', checkin=checkin,
         settings=settings)
 
-@_404ifbadid
 @app.route('/checkins/<id>', methods=['PUT'])
+@errortransform({InvalidId: NotFound, InvalidInput: BadRequest})
 def checkins_edit(id):
     '''
     PUT /checkins/<id>
 
     Updates specified checkin from request data.
     '''
-    checkin = checkinstore.get(int(id))
-    checkin.update(*(request.form[i] for i in ('lat', 'lon', 'val')))
+    checkin = checkinstore.get(id)
+    lat, lon, val = _checkin_data_from_req()
+    checkin.update(lat, lon, val)
     flash('checkin updated')
     return redirect(url_for('checkins_edit_form', id=checkin.id))
 
-@_404ifbadid
 @app.route('/checkins/<id>', methods=['DELETE'])
+@errortransform({InvalidId: NotFound})
 def checkins_delete(id):
     '''
     DELETE /checkins/<id>

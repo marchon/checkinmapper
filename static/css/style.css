@@ -2,12 +2,17 @@ html{height:100%}
 body{height:100%; margin:10px; padding:10px}
 dt{display:inline;}
 dd{display:inline;}
+#flash_messages{
+background-color:#ff0;
+}
 #map_canvas{
 width:600px;
 height:400px;;
 }
-.nav li{
+li{
 list-style: none;
+}
+.nav li{
 display:inline;
 padding-right:1em;
 }
@@ -15,9 +20,6 @@ form label{
 display: inline-block;
 vertical-align: top;
 width: 2em;
-}
-form fieldset li{
-list-style: none;
 }
 form fieldset{
 border: none;

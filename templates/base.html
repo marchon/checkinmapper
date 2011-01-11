@@ -10,6 +10,13 @@
   </head>
   <body>
     {% include 'header.html' %}
+    <div id="flash_messages">
+      <ul>
+        {% for msg in get_flashed_messages() %}
+        <li>{{ msg }}</li>
+        {% endfor %}
+      </ul>
+    </div>
     <div id="content-container">
     {% block content %}{% endblock %}
     </div>
