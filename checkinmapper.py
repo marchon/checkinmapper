@@ -151,7 +151,7 @@ def _checkin_data_from_req():
         raise InvalidInput
 
 @app.route('/checkins/new', methods=['POST'])
-@errortransform({InvalidId: NotFound, InvalidInput: BadRequest})
+@errortransform({InvalidInput: BadRequest})
 def checkins_new():
     '''
     POST /checkins/new
