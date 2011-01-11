@@ -38,11 +38,15 @@ class Checkin(object):
         self.val = val
 
     def __repr__(self):
-        return '<%s lat=%r lon=%r val=%r>' % (self.__class__.__name__,
-            self.lat, self.lon, self.val)
+        return '<%s id=%r lat=%r lon=%r val=%r>' % (self.__class__.__name__,
+            self.id, self.lat, self.lon, self.val)
 
 class InvalidId(Exception): pass
+
 class CheckinStore(object):
+    '''
+    Abstract base class for Checkin stores.
+    '''
     def get(self, id):
         raise NotImplementedError
     def add(self, checkin):
@@ -54,7 +58,11 @@ class CheckinStore(object):
     def __iter__(self):
         raise NotImplementedError
 
-class InMemoryCheckinStore(CheckinStore):
+class TmpCheckinStore(CheckinStore):
+    '''
+    CheckinStore which stores data in memory.
+    All data lost when process terminates.
+    '''
     def __init__(self):
         self.checkins = {}
         self.counter = count()
@@ -102,7 +110,7 @@ def add_random_checkins(checkinstore, n=10, latbounds=(35, 40),
         checkin = Checkin(lat, lon, val)
         checkinstore.add(checkin)
 
-checkinstore = InMemoryCheckinStore()
+checkinstore = TmpCheckinStore()
 add_random_checkins(checkinstore)
 
 def errortransform(errormap):
