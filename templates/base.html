@@ -4,6 +4,12 @@
     <title>{% block title %}Checkin Mapper{% endblock %}</title>
     <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
     <link rel="stylesheet" href="/static/css/style.css" />
+    {#<link rel="stylesheet/less" href="/static/css/style.less" />
+    <script src="/static/javascripts/less.min.js"></script>
+    <script type="text/javascript" charset="utf-8">
+        less.env = "development";
+        less.watch();
+    </script>#}
     <script src="http://www.google.com/jsapi?key={{ settings.google.jsapi_key }}"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.4.4/jquery.min.js"></script>
     {% block extrahead %}{% endblock %}
